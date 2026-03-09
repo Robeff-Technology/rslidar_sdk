@@ -30,7 +30,7 @@ def generate_launch_description():
         os.environ['RMW_IMPLEMENTATION'] = 'rmw_cyclonedds_cpp'
         print(f"Environment Variable Set: RMW_IMPLEMENTATION={os.environ.get('RMW_IMPLEMENTATION')}")
 
-    rviz_config = get_package_share_directory('rslidar_sdk') + '/rviz/rviz2.rviz'
+    rviz_config = get_package_share_directory('rslidar_ros2') + '/rviz/rviz2.rviz'
 
     return LaunchDescription([
         ComposableNodeContainer(
@@ -41,7 +41,7 @@ def generate_launch_description():
             output='screen',
             composable_node_descriptions=[
                 ComposableNode(
-                    package='rslidar_sdk',
+                    package='rslidar_ros2',
                     plugin='robosense::lidar::RslidarSdkComponent',
                     name='rslidar_sdk_node'
                 )

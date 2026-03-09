@@ -135,7 +135,7 @@ int main(int argc, char** argv)
   std::string config_path;
 
 #ifdef RUN_IN_ROS_WORKSPACE
-   config_path = ros::package::getPath("rslidar_sdk");
+  config_path = ros::package::getPath("rslidar_ros2");
 #else
    config_path = (std::string)PROJECT_PATH;
 #endif

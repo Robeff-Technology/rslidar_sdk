@@ -2,10 +2,10 @@ from launch import LaunchDescription
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
 def generate_launch_description():
-    rviz_config=get_package_share_directory('rslidar_sdk')+'/rviz/rviz2.rviz'
+    rviz_config=get_package_share_directory('rslidar_ros2')+'/rviz/rviz2.rviz'
     return LaunchDescription([
         Node(
-            package='rslidar_sdk',
+            package='rslidar_ros2',
             node_namespace='rslidar_sdk',
             node_name='rslidar_sdk_node',
             node_executable='rslidar_sdk_node',

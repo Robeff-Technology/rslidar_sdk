@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 cmake_policy(SET CMP0048 NEW)
-project(rslidar_sdk)
+project(rslidar_ros2)
 
 #=======================================
 # Custom Point Type (XYZI,XYZIRT, XYZIF, XYZIRTF)
@@ -59,7 +59,7 @@ endif(${ENABLE_IMU_DATA_PARSE})
 #========================
 # Project details / setup
 #========================
-set(PROJECT_NAME rslidar_sdk)
+set(PROJECT_NAME rslidar_ros2)
 
 add_definitions(-DPROJECT_PATH="${PROJECT_SOURCE_DIR}")
 
