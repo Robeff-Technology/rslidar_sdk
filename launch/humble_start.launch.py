@@ -7,8 +7,8 @@ from launch_ros.actions import Node, ComposableNodeContainer
 from launch_ros.descriptions import ComposableNode
 from ament_index_python.packages import get_package_share_directory
 
+
 def install_cyclone_dds():
-    # Check if Cyclone DDS is already installed
     result = subprocess.run(['dpkg', '-s', 'ros-humble-rmw-cyclonedds-cpp'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if result.returncode == 0:
         print("DDS is already installed.")
@@ -22,6 +22,7 @@ def install_cyclone_dds():
         except subprocess.CalledProcessError as e:
             print(f"Failed to install DDS: {str(e)}")
             sys.exit(1)
+
 
 def generate_launch_description():
     if os.getenv('ROS_DISTRO') == 'humble':
@@ -49,4 +50,3 @@ def generate_launch_description():
         ),
         Node(namespace='rviz2', package='rviz2', executable='rviz2', arguments=['-d', rviz_config])
     ])
-

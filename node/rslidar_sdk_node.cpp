@@ -40,13 +40,64 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ros/package.h>
 #elif ROS2_FOUND
 #include <rclcpp/rclcpp.hpp>
+#include <rclcpp_components/register_node_macro.hpp>
 #endif
 
 using namespace robosense::lidar;
 
 #ifdef ROS2_FOUND
-std::mutex g_mtx;
-std::condition_variable g_cv;
+namespace robosense
+{
+namespace lidar
+{
+
+class RslidarSdkComponent : public rclcpp::Node
+{
+public:
+  explicit RslidarSdkComponent(const rclcpp::NodeOptions& options = rclcpp::NodeOptions())
+    : Node("rslidar_sdk_node", options), manager_(std::make_shared<NodeManager>())
+  {
+    RS_TITLE << "********************************************************" << RS_REND;
+    RS_TITLE << "**********                                    **********" << RS_REND;
+    RS_TITLE << "**********    RSLidar_SDK Version: v" << RSLIDAR_VERSION_MAJOR
+      << "." << RSLIDAR_VERSION_MINOR
+      << "." << RSLIDAR_VERSION_PATCH << "     **********" << RS_REND;
+    RS_TITLE << "**********                                    **********" << RS_REND;
+    RS_TITLE << "********************************************************" << RS_REND;
+
+    std::string config_path = (std::string)PROJECT_PATH;
+    config_path += "/config/config.yaml";
+    config_path = this->declare_parameter<std::string>("config_path", config_path);
+
+    YAML::Node config;
+    try
+    {
+      config = YAML::LoadFile(config_path);
+      RS_INFO << "--------------------------------------------------------" << RS_REND;
+      RS_INFO << "Config loaded from PATH:" << RS_REND;
+      RS_INFO << config_path << RS_REND;
+      RS_INFO << "--------------------------------------------------------" << RS_REND;
+    }
+    catch (...)
+    {
+      RS_ERROR << "The format of config file " << config_path << " is wrong. Please check (e.g. indentation)." << RS_REND;
+      throw std::runtime_error("Failed to load rslidar config file: " + config_path);
+    }
+
+    manager_->init(config);
+    manager_->start();
+
+    RS_MSG << "RoboSense-LiDAR-Driver is running....." << RS_REND;
+  }
+
+private:
+  std::shared_ptr<NodeManager> manager_;
+};
+
+}  // namespace lidar
+}  // namespace robosense
+
+RCLCPP_COMPONENTS_REGISTER_NODE(robosense::lidar::RslidarSdkComponent)
 #endif
 
 static void sigHandler(int sig)
@@ -55,14 +106,19 @@ static void sigHandler(int sig)
 
 #ifdef ROS_FOUND
   ros::shutdown();
-#elif ROS2_FOUND
-  g_cv.notify_all();
 #endif
 }
 
 int main(int argc, char** argv)
 {
   signal(SIGINT, sigHandler);  ///< bind ctrl+c signal with the sigHandler function
+
+#ifdef ROS2_FOUND
+  rclcpp::init(argc, argv);
+  rclcpp::spin(std::make_shared<robosense::lidar::RslidarSdkComponent>(rclcpp::NodeOptions()));
+  rclcpp::shutdown();
+  return 0;
+#endif
 
   RS_TITLE << "********************************************************" << RS_REND;
   RS_TITLE << "**********                                    **********" << RS_REND;
@@ -74,8 +130,6 @@ int main(int argc, char** argv)
 
 #ifdef ROS_FOUND
   ros::init(argc, argv, "rslidar_sdk_node", ros::init_options::NoSigintHandler);
-#elif ROS2_FOUND
-  rclcpp::init(argc, argv);
 #endif
 
   std::string config_path;
@@ -92,12 +146,9 @@ int main(int argc, char** argv)
   ros::NodeHandle priv_hh("~");
   std::string path;
   priv_hh.param("config_path", path, std::string(""));
-#elif ROS2_FOUND
-  std::shared_ptr<rclcpp::Node> nd = rclcpp::Node::make_shared("param_handle");
-  std::string path = nd->declare_parameter<std::string>("config_path", "");
 #endif
 
-#if defined(ROS_FOUND) || defined(ROS2_FOUND)
+#if defined(ROS_FOUND)
   if (!path.empty())
   {
     config_path = path;
@@ -127,9 +178,6 @@ int main(int argc, char** argv)
 
 #ifdef ROS_FOUND
   ros::spin();
-#elif ROS2_FOUND
-  std::unique_lock<std::mutex> lck(g_mtx);
-  g_cv.wait(lck);
 #endif
 
   return 0;

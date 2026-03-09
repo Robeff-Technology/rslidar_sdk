@@ -5,7 +5,7 @@ project(rslidar_sdk)
 #=======================================
 # Custom Point Type (XYZI,XYZIRT, XYZIF, XYZIRTF)
 #=======================================
-set(POINT_TYPE XYZI)
+set(POINT_TYPE XYZIRT)
 
 option(ENABLE_TRANSFORM "Enable transform functions" OFF)
 if(${ENABLE_TRANSFORM})
@@ -139,6 +139,7 @@ if(rclcpp_FOUND)
   set(CMAKE_CXX_STANDARD 14)
 
   find_package(ament_cmake REQUIRED)
+  find_package(rclcpp_components REQUIRED)
   find_package(sensor_msgs REQUIRED)
   find_package(rslidar_msg REQUIRED)
   find_package(std_msgs REQUIRED)                      
@@ -164,39 +165,33 @@ include_directories(${rs_driver_INCLUDE_DIRS})
 # Build Setup
 #========================
 
-add_executable(rslidar_sdk_node
-               node/rslidar_sdk_node.cpp
-               src/manager/node_manager.cpp)
-
-target_link_libraries(rslidar_sdk_node                   
-                      ${YAML_CPP_LIBRARIES}
-                      ${rs_driver_LIBRARIES})
-
-#Ros#
-if(roscpp_FOUND)
-
-  target_link_libraries(rslidar_sdk_node 
-    ${ROS_LIBS})
-
-  install(TARGETS rslidar_sdk_node
-          RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-          LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-          ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
-
-endif(roscpp_FOUND)
-
 #Ros2#
 if(rclcpp_FOUND)
 
-  ament_target_dependencies(rslidar_sdk_node 
-    rclcpp 
-    std_msgs 
-    sensor_msgs 
+  add_library(rslidar_sdk_component SHARED
+              node/rslidar_sdk_node.cpp
+              src/manager/node_manager.cpp)
+
+  target_link_libraries(rslidar_sdk_component
+                        ${YAML_CPP_LIBRARIES}
+                        ${rs_driver_LIBRARIES})
+
+  ament_target_dependencies(rslidar_sdk_component
+    rclcpp
+    rclcpp_components
+    std_msgs
+    sensor_msgs
     rslidar_msg)
 
+  rclcpp_components_register_node(rslidar_sdk_component
+    PLUGIN "robosense::lidar::RslidarSdkComponent"
+    EXECUTABLE rslidar_sdk_node)
+
   install(TARGETS
-    rslidar_sdk_node
-    DESTINATION lib/${PROJECT_NAME})
+    rslidar_sdk_component
+    RUNTIME DESTINATION lib/${PROJECT_NAME}
+    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib)
 
   install(DIRECTORY
     launch
@@ -206,4 +201,23 @@ if(rclcpp_FOUND)
   ament_package()
 
 endif(rclcpp_FOUND)
+
+#Ros#
+if(roscpp_FOUND AND NOT rclcpp_FOUND)
+
+  add_executable(rslidar_sdk_node
+                 node/rslidar_sdk_node.cpp
+                 src/manager/node_manager.cpp)
+
+  target_link_libraries(rslidar_sdk_node
+                        ${YAML_CPP_LIBRARIES}
+                        ${rs_driver_LIBRARIES}
+                        ${ROS_LIBS})
+
+  install(TARGETS rslidar_sdk_node
+          RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+          LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+          ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
+
+endif(roscpp_FOUND AND NOT rclcpp_FOUND)
 
